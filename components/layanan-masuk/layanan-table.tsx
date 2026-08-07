@@ -1,0 +1,87 @@
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import type { LayananMasuk } from "@/data/data-layanan";
+import StatusBadge from "@/components/layanan-masuk/status-badge";
+import DurationBadge from "@/components/layanan-masuk/duration-badge";
+import BidangTags from "@/components/layanan-masuk/bidang-tags";
+import TicketCell from "@/components/layanan-masuk/ticket-cell";
+
+const COLUMNS = [
+  "NO. TIKET",
+  "TGL MASUK",
+  "DURASI",
+  "NAMA PEMOHON",
+  "ASAL INSTANSI",
+  "BIDANG/UPTB",
+  "STATUS",
+  "AKSI",
+];
+
+export default function LayananTable({ data }: { data: LayananMasuk[] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[900px] border-collapse text-left">
+        <thead>
+          <tr className="border-b border-slate-100">
+            {COLUMNS.map((column) => (
+              <th
+                key={column}
+                className="px-4 py-3 text-[11px] font-semibold tracking-wider whitespace-nowrap text-slate-400"
+              >
+                {column}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item) => (
+            <tr
+              key={item.id}
+              className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60"
+            >
+              <td className="px-4 py-4 align-top">
+                <TicketCell
+                  noTiket={item.noTiket}
+                  perluTindakLanjut={item.perluTindakLanjut}
+                />
+              </td>
+              <td className="px-4 py-4 align-top text-sm whitespace-nowrap text-slate-600">
+                {item.tglMasuk}
+              </td>
+              <td className="px-4 py-4 align-top">
+                <DurationBadge label={item.durasiLabel} variant={item.durasiVariant} />
+              </td>
+              <td className="px-4 py-4 align-top text-sm font-medium whitespace-nowrap text-slate-800">
+                {item.namaPemohon}
+              </td>
+              <td className="px-4 py-4 align-top text-sm whitespace-nowrap text-slate-600">
+                {item.asalInstansi}
+              </td>
+              <td className="px-4 py-4 align-top">
+                <BidangTags items={item.bidangUptb} />
+              </td>
+              <td className="px-4 py-4 align-top">
+                <StatusBadge status={item.status} />
+              </td>
+              <td className="px-4 py-4 align-top">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-blue-600 transition-colors hover:bg-blue-100"
+                >
+                  <VisibilityOutlinedIcon sx={{ fontSize: 14 }} />
+                  Detail
+                </button>
+              </td>
+            </tr>
+          ))}
+          {data.length === 0 ? (
+            <tr>
+              <td colSpan={COLUMNS.length} className="px-4 py-10 text-center text-sm text-slate-400">
+                Tidak ada layanan dengan status ini.
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
+    </div>
+  );
+}
