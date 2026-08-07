@@ -93,13 +93,13 @@ export default function Sidebar() {
         </ul>
         <div className=" h-px mt-5 bg-white/10" />
         <div className="py-4">
-          <button
-            type="button"
+          <Link
+            href="/login"
             className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-[15px] font-semibold text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
           >
             <LogoutOutlinedIcon fontSize="small" />
             <span>Keluar</span>
-          </button>
+          </Link>
         </div>
       </nav>
 
