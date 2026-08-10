@@ -39,7 +39,7 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4">
         <NavbarSearchField />
-        <NavbarNotificationButton count={5} />
+        <NavbarNotificationButton />
         <NavbarProfile />
       </div>
     </header>
