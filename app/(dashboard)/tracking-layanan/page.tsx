@@ -1,7 +1,5 @@
-export default function TrackingLayanan() {
-    return (
-      <div>
-        <h1>Tracking Layanan</h1>
-      </div>
-    );
-  }
+import TrackingLayananView from "@/components/tracking-layanan/tracking-layanan-view";
+
+export default function TrackingLayananPage() {
+  return <TrackingLayananView />;
+}

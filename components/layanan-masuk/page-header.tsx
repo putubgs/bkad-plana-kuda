@@ -2,17 +2,18 @@
 
 import { useState } from "react";
 import FilterListOutlinedIcon from "@mui/icons-material/FilterListOutlined";
-import { DATA_LAYANAN_MASUK } from "@/data/data-layanan";
 import { exportLayananToExcel } from "@/lib/export-layanan-excel";
 import ExportButton from "@/components/layanan-masuk/export-button";
+import { useLayananStore } from "@/store/use-layanan-store";
 
 export default function LayananMasukPageHeader() {
+  const tickets = useLayananStore((state) => state.tickets);
   const [loading, setLoading] = useState(false);
 
   const handleExportAll = async () => {
     setLoading(true);
     try {
-      await exportLayananToExcel(DATA_LAYANAN_MASUK, "layanan-masuk-semua");
+      await exportLayananToExcel(tickets, "layanan-masuk-semua");
     } finally {
       setLoading(false);
     }
