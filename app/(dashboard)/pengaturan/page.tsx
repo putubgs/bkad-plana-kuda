@@ -1,7 +1,5 @@
-export default function Pengaturan() {
-    return (
-      <div>
-        <h1>Pengaturan</h1>
-      </div>
-    );
-  }
+import PengaturanView from "@/components/pengaturan/pengaturan-view";
+
+export default function PengaturanPage() {
+  return <PengaturanView />;
+}
