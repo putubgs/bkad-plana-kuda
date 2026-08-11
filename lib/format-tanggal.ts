@@ -8,3 +8,11 @@ export function formatTanggalLengkap(timestamp: string) {
     year: "numeric",
   }).format(date);
 }
+
+export function formatTanggalRingkas(date: Date = new Date()) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}

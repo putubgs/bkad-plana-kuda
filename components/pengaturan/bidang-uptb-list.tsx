@@ -3,19 +3,18 @@
 import { useMemo, useState } from "react";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import { DATA_BIDANG_ADMIN, type BidangAdmin } from "@/data/data-admin-bidang";
+import { useAdminBidangStore } from "@/store/use-admin-bidang-store";
 import BidangRow from "@/components/pengaturan/bidang-row";
 import AdminRatingModal from "@/components/pengaturan/admin-rating-modal";
-import TambahAdminForm, { type NewAdminInput } from "@/components/pengaturan/tambah-admin-form";
-
-interface AdminFormValues {
-  bidangNama: string;
-  email: string;
-  biografi: string;
-}
+import TambahAdminForm from "@/components/pengaturan/tambah-admin-form";
 
 export default function BidangUptbList() {
-  const [bidangList, setBidangList] = useState<BidangAdmin[]>(DATA_BIDANG_ADMIN);
+  const bidangList = useAdminBidangStore((state) => state.bidangList);
+  const toggleStatus = useAdminBidangStore((state) => state.toggleStatus);
+  const updateAdmin = useAdminBidangStore((state) => state.updateAdmin);
+  const deleteAdmin = useAdminBidangStore((state) => state.deleteAdmin);
+  const addAdmin = useAdminBidangStore((state) => state.addAdmin);
+
   const [ratingModalId, setRatingModalId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -26,36 +25,9 @@ export default function BidangUptbList() {
 
   const ratingModalBidang = bidangList.find((item) => item.id === ratingModalId) ?? null;
 
-  function handleToggleStatus(id: string) {
-    setBidangList((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, status: item.status === "Aktif" ? "Nonaktif" : "Aktif" }
-          : item
-      )
-    );
-  }
-
-  function handleUpdateAdmin(id: string, values: AdminFormValues) {
-    setBidangList((prev) => prev.map((item) => (item.id === id ? { ...item, ...values } : item)));
-  }
-
   function handleDeleteAdmin(id: string) {
-    setBidangList((prev) => prev.filter((item) => item.id !== id));
+    deleteAdmin(id);
     setRatingModalId((prev) => (prev === id ? null : prev));
-  }
-
-  function handleAddAdmin(values: NewAdminInput) {
-    const newAdmin: BidangAdmin = {
-      id: `bidang-${Date.now()}`,
-      bidangNama: values.bidangNama,
-      email: values.email,
-      biografi: values.biografi,
-      status: "Aktif",
-      ratedTickets: [],
-    };
-    setBidangList((prev) => [...prev, newAdmin]);
-    setShowAddForm(false);
   }
 
   return (
@@ -90,7 +62,13 @@ export default function BidangUptbList() {
       </div>
 
       {showAddForm ? (
-        <TambahAdminForm onAdd={handleAddAdmin} onCancel={() => setShowAddForm(false)} />
+        <TambahAdminForm
+          onAdd={(values) => {
+            addAdmin(values);
+            setShowAddForm(false);
+          }}
+          onCancel={() => setShowAddForm(false)}
+        />
       ) : null}
 
       <div>
@@ -104,8 +82,8 @@ export default function BidangUptbList() {
               key={bidang.id}
               index={index + 1}
               bidang={bidang}
-              onToggleStatus={() => handleToggleStatus(bidang.id)}
-              onUpdateAdmin={(values) => handleUpdateAdmin(bidang.id, values)}
+              onToggleStatus={() => toggleStatus(bidang.id)}
+              onUpdateAdmin={(values) => updateAdmin(bidang.id, values)}
               onDeleteAdmin={() => handleDeleteAdmin(bidang.id)}
               onOpenRatings={() => setRatingModalId(bidang.id)}
             />
