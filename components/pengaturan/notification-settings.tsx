@@ -13,16 +13,16 @@ interface NotificationChannel {
 }
 
 const CHANNELS: NotificationChannel[] = [
-  {
-    id: "whatsapp",
-    icon: PhoneIphoneOutlinedIcon,
-    label: "Bot WhatsApp",
-    description: "Notifikasi ke admin via WhatsApp Bot saat tiket baru masuk.",
-  },
+  // {
+  //   id: "whatsapp",
+  //   icon: PhoneIphoneOutlinedIcon,
+  //   label: "Bot WhatsApp",
+  //   description: "Notifikasi ke admin via WhatsApp Bot saat tiket baru masuk.",
+  // },
   {
     id: "email",
     icon: EmailOutlinedIcon,
-    label: "Email Otomatis ke Pemohon",
+    label: "Email Otomatis",
     description: "Kirim email konfirmasi setiap kali status tiket berubah.",
   },
 ];

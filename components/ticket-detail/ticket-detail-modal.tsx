@@ -21,7 +21,17 @@ type TabId = "info" | "catatan" | "notifikasi";
 const TABS: { id: TabId; label: string; icon: typeof InfoOutlinedIcon }[] = [
   { id: "info", label: "Info Layanan", icon: InfoOutlinedIcon },
   { id: "catatan", label: "Catatan Progres", icon: ChecklistOutlinedIcon },
-  { id: "notifikasi", label: "Log Notifikasi", icon: NotificationsNoneOutlinedIcon },
+  {
+    id: "notifikasi",
+    label: "Log Notifikasi",
+    icon: NotificationsNoneOutlinedIcon,
+  },
+];
+
+const TABS2: { id: TabId; label: string }[] = [
+  { id: "info", label: "Info Layanan" },
+  { id: "catatan", label: "Catatan Progres" },
+  { id: "notifikasi", label: "Log Notifikasi" },
 ];
 
 const DURATION_BADGE_STYLES: Record<DurasiVariant, string> = {
@@ -93,13 +103,17 @@ export default function TicketDetailModal() {
       <div
         onClick={(event) => event.stopPropagation()}
         className={`flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-200 ${
-          visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-4 scale-95 opacity-0"
+          visible
+            ? "translate-y-0 scale-100 opacity-100"
+            : "translate-y-4 scale-95 opacity-0"
         }`}
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-base font-bold text-blue-600">{ticket.noTiket}</span>
+              <span className="text-base font-bold text-blue-600">
+                {ticket.noTiket}
+              </span>
               <StatusBadge status={ticket.status} />
               <span
                 className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium whitespace-nowrap ${DURATION_BADGE_STYLES[ticket.durasiVariant]}`}
@@ -115,7 +129,9 @@ export default function TicketDetailModal() {
               ) : null}
             </div>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-500">
-              <span className="font-medium text-slate-700">{ticket.namaPemohon}</span>
+              <span className="font-medium text-slate-700">
+                {ticket.namaPemohon}
+              </span>
               <span className="text-slate-300">·</span>
               {toDurasiSentence(ticket.durasiLabel)}
             </p>
@@ -130,9 +146,9 @@ export default function TicketDetailModal() {
           </button>
         </div>
 
-        <div className="flex items-center gap-6 overflow-x-auto border-b border-slate-100 bg-slate-50 px-6">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
+        <div className="flex items-center gap-6 border-b border-slate-100 bg-slate-50 px-6">
+          {TABS2.map((tab) => {
+            // const Icon = tab.icon;
             const isActive = tab.id === activeTab;
 
             return (
@@ -140,16 +156,20 @@ export default function TicketDetailModal() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 py-3 text-sm font-semibold whitespace-nowrap transition-colors ${
-                  isActive ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
+                className={`relative flex items-center justify-center gap-1.5 py-3 text-sm font-semibold whitespace-nowrap transition-colors ${
+                  isActive
+                    ? "text-blue-600"
+                    : "text-slate-400 hover:text-slate-600"
                 }`}
               >
-                <Icon fontSize="small" />
+                {/* <Icon fontSize="small" /> */}
                 {tab.label}
                 {tab.id === "catatan" ? (
                   <span
-                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold ${
-                      isActive ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"
+                    className={`flex items-center justify-center rounded-full text-[11px] font-bold py-0.5 px-1.5 ${
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-200 text-slate-500"
                     }`}
                   >
                     {ticket.catatanProgres.length}
@@ -169,10 +189,15 @@ export default function TicketDetailModal() {
             <div className="flex flex-col gap-4">
               <StatusFlow status={ticket.status} />
               <CatatanTimeline entries={ticket.catatanProgres} />
-              <TambahCatatanForm ticketId={ticket.id} currentStatus={ticket.status} />
+              <TambahCatatanForm
+                ticketId={ticket.id}
+                currentStatus={ticket.status}
+              />
             </div>
           ) : null}
-          {activeTab === "notifikasi" ? <LogNotifikasiTab ticket={ticket} /> : null}
+          {activeTab === "notifikasi" ? (
+            <LogNotifikasiTab ticket={ticket} />
+          ) : null}
         </div>
       </div>
     </div>
