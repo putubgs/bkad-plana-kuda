@@ -1,7 +1,5 @@
-export default function LaporanLayanan() {
-    return (
-      <div>
-        <h1>Laporan Layanan</h1>
-      </div>
-    );
-  }
+import LaporanLayananView from "@/components/laporan-layanan/laporan-layanan-view";
+
+export default function LaporanLayananPage() {
+  return <LaporanLayananView />;
+}
