@@ -11,3 +11,94 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  userId   String @id @default(uuid()) @map("user_id") @db.Uuid
+  username String @unique @db.VarChar(255)
+  password String @db.VarChar(255)
+  role     String @db.VarChar(255)
+  email    String @unique @db.VarChar(255)
+
+  departmentName String? @unique @map("department_name") @db.VarChar(255)
+  isActive       Boolean? @default(true) @map("is_active")
+  biography      String? @db.VarChar(255)
+
+  // Forgot-password: passwordResetToken stores a SHA-256 hash of a
+  // cryptographically random token, never the raw value. Widened from the
+  // original varchar(6) since a 6-char token is not secure enough to store
+  // (or expose) for a real reset flow.
+  passwordResetToken  String? @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpiry DateTime? @map("password_reset_expiry") @db.Timestamptz
+
+  // MFA (TOTP). mfaEnabled only flips to true after the first successful
+  // OTP verification - never merely because mfaSecret is set. mfaSecret is
+  // encrypted (AES-256-GCM) before it is stored here; the *pending*
+  // (unverified) secret during enrollment lives only in Redis with a TTL.
+  mfaEnabled   Boolean @default(false) @map("mfa_enabled")
+  mfaSecret    String? @map("mfa_secret") @db.Text
+  mfaEnabledAt DateTime? @map("mfa_enabled_at") @db.Timestamptz
+
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  sessions      Session[]
+  recoveryCodes MfaRecoveryCode[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+/// One row per authenticated session. Revoking access = deleting row(s).
+model Session {
+  id        String @id @default(uuid()) @db.Uuid
+  userId    String @map("user_id") @db.Uuid
+  tokenHash String @unique @map("token_hash") @db.VarChar(255)
+
+  userAgent String? @map("user_agent") @db.VarChar(500)
+  ipAddress String? @map("ip_address") @db.VarChar(64)
+
+  createdAt  DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz
+  lastSeenAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("last_seen_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("sessions")
+  @@index([userId])
+}
+
+/// Hashed, single-use MFA recovery codes. Regenerating invalidates all
+/// previous codes for the user (rows are deleted and replaced).
+model MfaRecoveryCode {
+  id       String @id @default(uuid()) @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+  codeHash String @map("code_hash") @db.VarChar(255)
+
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("mfa_recovery_codes")
+  @@index([userId])
+}
+
+/// Security-sensitive event log. Never stores passwords, TOTP secrets, OTP
+/// values, or recovery-code plaintext - see lib/audit-log.ts.
+model AuditLog {
+  id        String @id @default(uuid()) @db.Uuid
+  userId    String? @map("user_id") @db.Uuid
+  eventType String @map("event_type") @db.VarChar(64)
+  metadata  Json?
+
+  ipAddress String? @map("ip_address") @db.VarChar(64)
+  userAgent String? @map("user_agent") @db.VarChar(500)
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([eventType])
+}

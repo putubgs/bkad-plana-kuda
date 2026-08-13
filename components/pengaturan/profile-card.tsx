@@ -3,22 +3,29 @@
 import { useState } from "react";
 import UbahPasswordModal from "@/components/pengaturan/ubah-password-modal";
 
-export default function ProfileCard() {
+export interface ProfileCardUser {
+  username: string;
+  email: string;
+  role: string;
+}
+
+export default function ProfileCard({ user }: { user: ProfileCardUser }) {
   const [open, setOpen] = useState(false);
+  const initials = user.username.slice(0, 2).toUpperCase();
 
   return (
     <>
       <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-        <p className="mb-4 text-sm font-bold text-slate-900">Profil Pokja Plana Kuda</p>
+        <p className="mb-4 text-sm font-bold text-slate-900">Profil {user.username}</p>
 
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm font-bold text-white">
-            PK
+            {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-slate-900">Pokja Plana Kuda</p>
-            <p className="text-xs text-slate-500">Administrator BKAD Provinsi NTB</p>
-            <p className="text-xs text-blue-600">planakuda@bkad.ntbprov.go.id</p>
+            <p className="text-sm font-bold text-slate-900">{user.username}</p>
+            <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+            <p className="text-xs text-blue-600">{user.email}</p>
           </div>
         </div>
 

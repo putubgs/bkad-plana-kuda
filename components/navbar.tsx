@@ -6,7 +6,7 @@ import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
 import NavigateNextOutlinedIcon from "@mui/icons-material/NavigateNextOutlined";
 import NavbarSearchField from "@/components/navbar-search-field";
 import NavbarNotificationButton from "@/components/navbar-notification-button";
-import NavbarProfile from "@/components/navbar-profile";
+import NavbarProfile, { type NavbarProfileUser } from "@/components/navbar-profile";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -16,7 +16,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/pengaturan": "Pengaturan",
 };
 
-export default function Navbar() {
+export default function Navbar({ user }: { user: NavbarProfileUser }) {
   const pathname = usePathname();
   const title = PAGE_TITLES[pathname] ?? "Dashboard";
 
@@ -40,7 +40,7 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <NavbarSearchField />
         <NavbarNotificationButton />
-        <NavbarProfile />
+        <NavbarProfile user={user} />
       </div>
     </header>
   );

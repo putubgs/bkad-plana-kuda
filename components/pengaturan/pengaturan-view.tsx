@@ -1,8 +1,12 @@
 import ProfileCard from "@/components/pengaturan/profile-card";
+import MfaSettingsCard from "@/components/pengaturan/mfa-settings-card";
 import BidangUptbList from "@/components/pengaturan/bidang-uptb-list";
 import NotificationSettings from "@/components/pengaturan/notification-settings";
+import { getCurrentUser } from "@/lib/auth/dal";
 
-export default function PengaturanView() {
+export default async function PengaturanView() {
+  const user = await getCurrentUser();
+
   return (
     <div className="flex flex-col gap-5 p-6">
       <div>
@@ -13,7 +17,8 @@ export default function PengaturanView() {
       </div>
 
       <div className="flex max-w-2xl flex-col gap-5">
-        <ProfileCard />
+        <ProfileCard user={user} />
+        <MfaSettingsCard mfaEnabled={user.mfaEnabled} />
         <BidangUptbList />
         <NotificationSettings />
       </div>

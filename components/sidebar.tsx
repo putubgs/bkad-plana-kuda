@@ -2,14 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ComponentType } from "react";
+import { useTransition } from "react";
 import SpaceDashboardOutlinedIcon from "@mui/icons-material/SpaceDashboardOutlined";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import { postJson } from "@/lib/api-client";
+import type { ApiResult } from "@/lib/api/types";
+
+export interface SidebarUser {
+  username: string;
+  role: string;
+}
 
 type NavItem = {
   label: string;
@@ -39,8 +47,19 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Pengaturan", href: "/pengaturan", icon: SettingsOutlinedIcon },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ user }: { user: SidebarUser }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggingOut, startLogoutTransition] = useTransition();
+  const initials = user.username.slice(0, 2).toUpperCase();
+
+  function handleLogout() {
+    startLogoutTransition(async () => {
+      const result = await postJson<ApiResult>("/api/v1/auth/logout");
+      router.push(result.redirectTo ?? "/login");
+      router.refresh();
+    });
+  }
 
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-[#0F2044]">
@@ -93,26 +112,26 @@ export default function Sidebar() {
         </ul>
         <div className=" h-px mt-5 bg-white/10" />
         <div className="py-4">
-          <Link
-            href="/login"
-            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-[15px] font-semibold text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300"
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-[15px] font-semibold text-slate-500 transition-colors hover:bg-white/5 hover:text-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <LogoutOutlinedIcon fontSize="small" />
-            <span>Keluar</span>
-          </Link>
+            <span>{isLoggingOut ? "Memproses..." : "Keluar"}</span>
+          </button>
         </div>
       </nav>
 
       <div className="px-4 pb-5">
         <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#223153] px-4 py-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#5B8DFB] text-sm font-bold text-white">
-            PK
+            {initials}
           </div>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-bold text-white">
-              Pokja Plana Kuda
-            </p>
-            <p className="text-xs text-slate-400">Administrator</p>
+            <p className="truncate text-sm font-bold text-white">{user.username}</p>
+            <p className="truncate text-xs text-slate-400 capitalize">{user.role}</p>
           </div>
         </div>
       </div>

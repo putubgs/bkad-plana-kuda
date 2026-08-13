@@ -1,8 +1,15 @@
 import Image from "next/image";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import LoginBrandPanel from "@/components/login/brand-panel";
 import LoginForm from "@/components/login/login-form";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reset?: string }>;
+}) {
+  const { reset } = await searchParams;
+
   return (
     <div className="flex min-h-screen w-full bg-white">
       <LoginBrandPanel />
@@ -34,6 +41,13 @@ export default function LoginPage() {
               Masukkan kredensial Anda untuk mengakses dashboard Plana Kuda.
             </p>
           </div>
+
+          {reset === "success" ? (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-600">
+              <CheckCircleOutlinedIcon fontSize="small" />
+              Password berhasil diubah. Silakan masuk dengan password baru Anda.
+            </div>
+          ) : null}
 
           <LoginForm />
 
