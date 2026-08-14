@@ -3,7 +3,6 @@ import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { destroyAllSessionsForUser, hashToken } from "@/lib/auth/session";
 import { rateLimit } from "@/lib/rate-limit";
-import { writeAuditLog } from "@/lib/audit-log";
 import { getRequestMeta } from "@/lib/auth/request-meta";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { resetPasswordSchema } from "@/lib/validation/auth-schemas";
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { token, password } = parsed.data;
-  const { ipAddress, userAgent } = await getRequestMeta();
+  const { ipAddress } = await getRequestMeta();
 
   const limitResult = await rateLimit({
     key: `reset-password:${ipAddress ?? "unknown"}`,
@@ -51,7 +50,6 @@ export async function POST(request: NextRequest) {
   });
 
   if (!user || !user.passwordResetExpiry || user.passwordResetExpiry < new Date()) {
-    await writeAuditLog({ eventType: "password_reset_failed", ipAddress, userAgent });
     return NextResponse.json<ApiResult>(
       { error: "Tautan reset password tidak valid atau sudah kedaluwarsa." },
       { status: 400 }
@@ -68,12 +66,6 @@ export async function POST(request: NextRequest) {
   });
 
   await destroyAllSessionsForUser(user.userId);
-  await writeAuditLog({
-    userId: user.userId,
-    eventType: "password_reset_success",
-    ipAddress,
-    userAgent,
-  });
 
   return NextResponse.json<ApiResult>({ redirectTo: "/login?reset=success" });
 }

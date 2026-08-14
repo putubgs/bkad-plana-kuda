@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Sidebar from "@/components/sidebar";
 import Navbar from "@/components/navbar";
 import TicketDetailModal from "@/components/ticket-detail/ticket-detail-modal";
+import TicketsBootstrap from "@/components/layanan-masuk/tickets-bootstrap";
 import { getCurrentUser } from "@/lib/auth/dal";
 
 export default async function DashboardLayout({
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
         <main className="flex-1 overflow-y-auto bg-slate-50">{children}</main>
       </div>
       <TicketDetailModal />
+      <TicketsBootstrap />
     </div>
   );
 }

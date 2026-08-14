@@ -7,8 +7,6 @@ import { verifyOtp } from "@/lib/auth/mfa";
 import { clearPendingMfaSecret, getPendingMfaSecret } from "@/lib/auth/mfa-pending";
 import { generateRecoveryCodePlaintexts, replaceRecoveryCodes } from "@/lib/auth/recovery-codes";
 import { rateLimit } from "@/lib/rate-limit";
-import { writeAuditLog } from "@/lib/audit-log";
-import { getRequestMeta } from "@/lib/auth/request-meta";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { mfaSetupVerifySchema } from "@/lib/validation/auth-schemas";
 import type { ApiResult } from "@/lib/api/types";
@@ -31,7 +29,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json<ApiResult>({ error: "Kode OTP harus 6 digit." }, { status: 400 });
   }
 
-  const { ipAddress, userAgent } = await getRequestMeta();
   const limitResult = await rateLimit({
     key: `mfa-setup-verify:${session.userId}`,
     limit: 8,
@@ -54,13 +51,6 @@ export async function POST(request: NextRequest) {
 
   const valid = await verifyOtp(parsed.data.otp, pendingSecret);
   if (!valid) {
-    await writeAuditLog({
-      userId: session.userId,
-      eventType: "mfa_verify_failed",
-      metadata: { context: "setup" },
-      ipAddress,
-      userAgent,
-    });
     return NextResponse.json<ApiResult>(
       { error: "Kode OTP tidak valid. Pastikan waktu di perangkat Anda sudah benar." },
       { status: 401 }
@@ -79,12 +69,6 @@ export async function POST(request: NextRequest) {
   });
   await replaceRecoveryCodes(session.userId, recoveryCodes);
   await clearPendingMfaSecret(session.userId);
-  await writeAuditLog({
-    userId: session.userId,
-    eventType: "mfa_enabled",
-    ipAddress,
-    userAgent,
-  });
   revalidatePath("/pengaturan");
 
   return NextResponse.json<ApiResult>({

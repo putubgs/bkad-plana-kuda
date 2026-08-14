@@ -57,3 +57,21 @@ export const mfaSetupVerifySchema = z.object({
 export const mfaReauthSchema = z.object({
   currentPassword: z.string().min(1, "Password wajib diisi"),
 });
+
+export const createUserSchema = z.object({
+  username: z.string().min(3, "Username minimal 3 karakter").trim(),
+  email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid").trim(),
+  password: passwordField,
+  role: z.string().min(1).trim().optional(),
+  departmentName: z.string().trim().nullable().optional(),
+  biography: z.string().trim().nullable().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updateUserSchema = z.object({
+  email: z.string().email("Format email tidak valid").trim().optional(),
+  departmentName: z.string().trim().nullable().optional(),
+  biography: z.string().trim().nullable().optional(),
+  isActive: z.boolean().optional(),
+  role: z.string().min(1).trim().optional(),
+});

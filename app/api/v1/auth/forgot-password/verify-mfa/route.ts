@@ -9,8 +9,6 @@ import { verifyOtp } from "@/lib/auth/mfa";
 import { consumeRecoveryCode } from "@/lib/auth/recovery-codes";
 import { issuePasswordResetEmail } from "@/lib/auth/issue-password-reset-email";
 import { rateLimit, resetRateLimit } from "@/lib/rate-limit";
-import { writeAuditLog } from "@/lib/audit-log";
-import { getRequestMeta } from "@/lib/auth/request-meta";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { otpVerifySchema } from "@/lib/validation/auth-schemas";
 import type { ApiResult } from "@/lib/api/types";
@@ -41,17 +39,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { ipAddress, userAgent } = await getRequestMeta();
   const limiterKey = `forgot-password-mfa-verify:${challenge.userId}`;
   const limitResult = await rateLimit({ key: limiterKey, limit: 5, windowSeconds: 10 * 60 });
   if (!limitResult.success) {
-    await writeAuditLog({
-      userId: challenge.userId,
-      eventType: "rate_limited",
-      metadata: { action: "forgot_password_mfa_verify" },
-      ipAddress,
-      userAgent,
-    });
     return NextResponse.json<ApiResult>(
       {
         error: `Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(limitResult.retryAfterSeconds / 60)} menit.`,
@@ -71,7 +61,6 @@ export async function POST(request: NextRequest) {
 
   const candidate = parsed.data.otp.replace(/\s/g, "");
   let verified = false;
-  let usedRecoveryCode = false;
 
   if (/^\d{6}$/.test(candidate)) {
     verified = await verifyOtp(candidate, decryptSecret(user.mfaSecret));
@@ -79,16 +68,9 @@ export async function POST(request: NextRequest) {
 
   if (!verified) {
     verified = await consumeRecoveryCode(user.userId, candidate);
-    usedRecoveryCode = verified;
   }
 
   if (!verified) {
-    await writeAuditLog({
-      userId: user.userId,
-      eventType: "forgot_password_mfa_verify_failed",
-      ipAddress,
-      userAgent,
-    });
     return NextResponse.json<ApiResult>(
       { error: "Kode OTP atau kode pemulihan tidak valid." },
       { status: 401 }
@@ -98,21 +80,6 @@ export async function POST(request: NextRequest) {
   await resetRateLimit(limiterKey);
   await clearPendingForgotPasswordChallenge(challenge.token);
 
-  if (usedRecoveryCode) {
-    await writeAuditLog({
-      userId: user.userId,
-      eventType: "mfa_recovery_code_used",
-      ipAddress,
-      userAgent,
-    });
-  }
-  await writeAuditLog({
-    userId: user.userId,
-    eventType: "forgot_password_mfa_verify_success",
-    ipAddress,
-    userAgent,
-  });
-
-  await issuePasswordResetEmail(user, { ipAddress, userAgent });
+  await issuePasswordResetEmail(user);
   return NextResponse.json<ApiResult>(FORGOT_PASSWORD_GENERIC_SUCCESS);
 }

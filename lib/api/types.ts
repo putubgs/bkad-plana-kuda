@@ -11,4 +11,7 @@ export interface ApiResult {
   /** mfa/setup/start only. */
   qrCodeDataUrl?: string;
   secret?: string;
+  /** Resource payloads for /api/v1/{users,sessions,mfa-recovery-codes,tickets}. */
+  data?: unknown;
+  meta?: { page: number; pageSize: number; total: number };
 }

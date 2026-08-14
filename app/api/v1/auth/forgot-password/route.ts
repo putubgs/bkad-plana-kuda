@@ -3,8 +3,6 @@ import { prisma } from "@/lib/db/prisma";
 import { createPendingForgotPasswordChallenge } from "@/lib/auth/mfa-pending";
 import { issuePasswordResetEmail } from "@/lib/auth/issue-password-reset-email";
 import { rateLimit } from "@/lib/rate-limit";
-import { writeAuditLog } from "@/lib/audit-log";
-import { getRequestMeta } from "@/lib/auth/request-meta";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { forgotPasswordSchema } from "@/lib/validation/auth-schemas";
 import type { ApiResult } from "@/lib/api/types";
@@ -26,7 +24,6 @@ export async function POST(request: NextRequest) {
   }
 
   const { email } = parsed.data;
-  const { ipAddress, userAgent } = await getRequestMeta();
 
   const limitResult = await rateLimit({
     key: `forgot-password:${email.toLowerCase()}`,
@@ -34,12 +31,6 @@ export async function POST(request: NextRequest) {
     windowSeconds: 60 * 60,
   });
   if (!limitResult.success) {
-    await writeAuditLog({
-      eventType: "rate_limited",
-      metadata: { action: "forgot_password", email },
-      ipAddress,
-      userAgent,
-    });
     return NextResponse.json<ApiResult>(FORGOT_PASSWORD_GENERIC_SUCCESS);
   }
 
@@ -54,15 +45,9 @@ export async function POST(request: NextRequest) {
 
   if (user.mfaEnabled) {
     await createPendingForgotPasswordChallenge(user.userId);
-    await writeAuditLog({
-      userId: user.userId,
-      eventType: "forgot_password_mfa_required",
-      ipAddress,
-      userAgent,
-    });
     return NextResponse.json<ApiResult>({ mfaRequired: true });
   }
 
-  await issuePasswordResetEmail(user, { ipAddress, userAgent });
+  await issuePasswordResetEmail(user);
   return NextResponse.json<ApiResult>(FORGOT_PASSWORD_GENERIC_SUCCESS);
 }

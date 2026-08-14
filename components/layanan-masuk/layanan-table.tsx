@@ -25,6 +25,8 @@ const COLUMNS = [
 
 export default function LayananTable() {
   const tickets = useLayananStore((state) => state.tickets);
+  const loading = useLayananStore((state) => state.loading);
+  const error = useLayananStore((state) => state.error);
   const openTicketDetail = useLayananStore((state) => state.openTicketDetail);
   const [activeStatus, setActiveStatus] = useState<StatusFilterValue>("Semua");
   const [exporting, setExporting] = useState(false);
@@ -132,7 +134,27 @@ export default function LayananTable() {
                 </td>
               </tr>
             ))}
-            {filteredData.length === 0 ? (
+            {loading && tickets.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={COLUMNS.length}
+                  className="px-4 py-10 text-center text-sm text-slate-400"
+                >
+                  Memuat layanan...
+                </td>
+              </tr>
+            ) : null}
+            {!loading && error ? (
+              <tr>
+                <td
+                  colSpan={COLUMNS.length}
+                  className="px-4 py-10 text-center text-sm text-red-500"
+                >
+                  {error}
+                </td>
+              </tr>
+            ) : null}
+            {!loading && !error && filteredData.length === 0 ? (
               <tr>
                 <td
                   colSpan={COLUMNS.length}

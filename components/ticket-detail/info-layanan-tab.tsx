@@ -61,13 +61,6 @@ export default function InfoLayananTab({ ticket }: { ticket: LayananMasuk }) {
         >
           {tglMasukLengkap}
         </InfoField>
-
-        <InfoField
-          icon={<DescriptionOutlinedIcon sx={{ fontSize: 14 }} />}
-          label="JENIS LAYANAN"
-        >
-          {ticket.jenisLayanan}
-        </InfoField>
       </div>
 
       <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">

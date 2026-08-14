@@ -5,8 +5,6 @@ import { getApiSession } from "@/lib/auth/dal";
 import { verifyPassword } from "@/lib/auth/password";
 import { deleteAllRecoveryCodes } from "@/lib/auth/recovery-codes";
 import { rateLimit } from "@/lib/rate-limit";
-import { writeAuditLog } from "@/lib/audit-log";
-import { getRequestMeta } from "@/lib/auth/request-meta";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { mfaReauthSchema } from "@/lib/validation/auth-schemas";
 import type { ApiResult } from "@/lib/api/types";
@@ -30,7 +28,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { ipAddress, userAgent } = await getRequestMeta();
   const limitResult = await rateLimit({
     key: `mfa-disable:${session.userId}`,
     limit: 5,
@@ -53,12 +50,6 @@ export async function POST(request: NextRequest) {
     data: { mfaEnabled: false, mfaSecret: null, mfaEnabledAt: null },
   });
   await deleteAllRecoveryCodes(session.userId);
-  await writeAuditLog({
-    userId: session.userId,
-    eventType: "mfa_disabled",
-    ipAddress,
-    userAgent,
-  });
   revalidatePath("/pengaturan");
 
   return NextResponse.json<ApiResult>({ success: "MFA telah dinonaktifkan untuk akun ini." });

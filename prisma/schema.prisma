@@ -42,9 +42,16 @@ model User {
   createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
 
-  sessions      Session[]
-  recoveryCodes MfaRecoveryCode[]
-  auditLogs     AuditLog[]
+  sessions                   Session[]
+  recoveryCodes              MfaRecoveryCode[]
+  ratingUsers                RatingUser[]
+  ticketDepartments          TicketDepartment[]
+  ticketProgresses           TicketProgress[]
+  uploadedDocuments          TicketProgressDocument[]
+  userStatusSnapshots        UserStatusSnapshot[]
+  automationSetting          AutomationSetting?
+  automationSettingSnapshots AutomationSettingSnapshot[]
+  notifications              Notification[]
 
   @@map("users")
 }
@@ -84,21 +91,197 @@ model MfaRecoveryCode {
   @@index([userId])
 }
 
-/// Security-sensitive event log. Never stores passwords, TOTP secrets, OTP
-/// values, or recovery-code plaintext - see lib/audit-log.ts.
-model AuditLog {
-  id        String @id @default(uuid()) @db.Uuid
-  userId    String? @map("user_id") @db.Uuid
-  eventType String @map("event_type") @db.VarChar(64)
-  metadata  Json?
+model Ticket {
+  ticketNumber         String  @id @map("ticket_number") @db.VarChar(100)
+  applicantName        String  @map("applicant_name") @db.VarChar(255)
+  applicantOccupation  String  @map("applicant_occupation") @db.VarChar(255)
+  whatsappNumber       String  @map("whatsapp_number") @db.VarChar(20)
+  organizationName     String  @map("organization_name") @db.VarChar(255)
+  identityNumber       String  @map("identity_number") @db.VarChar(50)
+  applicantEmail       String  @map("applicant_email") @db.VarChar(255)
+  serviceDescription   String  @map("service_description") @db.Text
+  isCompleted          Boolean @default(false) @map("is_completed")
+  isDeleted            Boolean @default(false) @map("is_deleted")
 
-  ipAddress String? @map("ip_address") @db.VarChar(64)
-  userAgent String? @map("user_agent") @db.VarChar(500)
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  rating      Rating?
+  departments TicketDepartment[]
+  progresses  TicketProgress[]
+
+  @@map("tickets")
+}
+
+model TicketDepartment {
+  ticketDepartmentId String @id @default(uuid()) @map("ticket_department_id") @db.Uuid
+  ticketNumber       String @map("ticket_number") @db.VarChar(100)
+  departmentName     String @map("department_name") @db.VarChar(255)
+
   createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
 
-  user User? @relation(fields: [userId], references: [userId], onDelete: SetNull)
+  ticket     Ticket @relation(fields: [ticketNumber], references: [ticketNumber], onDelete: Cascade)
+  department User   @relation(fields: [departmentName], references: [departmentName], onDelete: Restrict, onUpdate: Cascade)
 
-  @@map("audit_logs")
+  @@map("ticket_departments")
+  @@unique([ticketNumber, departmentName])
+  @@index([ticketNumber])
+  @@index([departmentName])
+}
+
+model TicketProgress {
+  progressId           String  @id @default(uuid()) @map("progress_id") @db.Uuid
+  ticketNumber         String  @map("ticket_number") @db.VarChar(100)
+  progressName         String  @map("progress_name") @db.VarChar(255)
+  dateAndTime          DateTime @map("date_and_time") @db.Timestamptz
+  progressNote         String  @map("progress_note") @db.VarChar(255)
+  followUpFeedback     String? @map("follow_up_feedback") @db.VarChar(255)
+  estimatedCompletion  Int?    @map("estimated_completion")
+  processDescription   String? @map("process_description") @db.VarChar(255)
+  updatedById          String  @map("updated_by") @db.Uuid
+  isDeleted            Boolean @default(false) @map("is_deleted")
+
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  ticket               Ticket                      @relation(fields: [ticketNumber], references: [ticketNumber], onDelete: Cascade)
+  updatedBy            User                        @relation(fields: [updatedById], references: [userId], onDelete: Restrict)
+  documents            TicketProgressDocument[]
+  notifications        Notification[]
+  messageDeliveryLogs  MessageDeliverySnapshot[]
+
+  @@map("ticket_progresses")
+  @@index([ticketNumber])
+  @@index([updatedById])
+}
+
+model TicketProgressDocument {
+  documentId        String @id @default(uuid()) @map("document_id") @db.Uuid
+  progressTicketId  String @map("progress_ticket_id") @db.Uuid
+  uploadedById      String @map("uploaded_by") @db.Uuid
+  fileName          String @map("file_name") @db.VarChar(255)
+  objectKey         String @unique @map("object_key") @db.Text
+  mimeType          String @map("mime_type") @db.VarChar(255)
+  fileSize          BigInt @map("file_size")
+
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  progress   TicketProgress @relation(fields: [progressTicketId], references: [progressId], onDelete: Cascade)
+  uploadedBy User           @relation(fields: [uploadedById], references: [userId], onDelete: Restrict)
+
+  @@map("ticket_progress_documents")
+  @@index([progressTicketId])
+  @@index([uploadedById])
+}
+
+model Rating {
+  ratingId      String   @id @default(uuid()) @map("rating_id") @db.Uuid
+  ratingValue   Decimal? @map("rating_value") @db.Decimal(4, 2)
+  ratingComment String?  @map("rating_comment") @db.Text
+  ticketNumber  String   @unique @map("ticket_number") @db.VarChar(100)
+
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+
+  ticket Ticket       @relation(fields: [ticketNumber], references: [ticketNumber], onDelete: Cascade)
+  users  RatingUser[]
+
+  @@map("rating")
+}
+
+model RatingUser {
+  ratingUserId String @id @default(uuid()) @map("rating_user_id") @db.Uuid
+  ratingId     String @map("rating_id") @db.Uuid
+  userId       String @map("user_id") @db.Uuid
+
+  createdAt DateTime? @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+
+  rating Rating @relation(fields: [ratingId], references: [ratingId], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("rating_users")
+  @@unique([ratingId, userId])
+  @@index([ratingId])
   @@index([userId])
-  @@index([eventType])
+}
+
+model UserStatusSnapshot {
+  statusLogId String @id @default(uuid()) @map("status_log_id") @db.Uuid
+  updatedById String @map("updated_by") @db.Uuid
+  action      String @db.VarChar(255)
+  reason      String @db.Text
+
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  updatedBy User @relation(fields: [updatedById], references: [userId], onDelete: Restrict)
+
+  @@map("user_status_snapshots")
+  @@index([updatedById])
+}
+
+model AutomationSetting {
+  settingId       String  @id @default(uuid()) @map("setting_id") @db.Uuid
+  updatedById     String  @unique @map("updated_by") @db.Uuid
+  whatsappEnabled Boolean @default(true) @map("whatsapp_enabled")
+  emailEnabled    Boolean @default(true) @map("email_enabled")
+
+  updatedAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @updatedAt @map("updated_at") @db.Timestamptz
+
+  updatedBy User @relation(fields: [updatedById], references: [userId], onDelete: Restrict)
+
+  @@map("automation_settings")
+}
+
+model AutomationSettingSnapshot {
+  settingLogId    String  @id @default(uuid()) @map("setting_log_id") @db.Uuid
+  updatedById     String  @map("updated_by") @db.Uuid
+  whatsappEnabled Boolean @default(true) @map("whatsapp_enabled")
+  emailEnabled    Boolean @default(true) @map("email_enabled")
+
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+
+  updatedBy User @relation(fields: [updatedById], references: [userId], onDelete: Restrict)
+
+  @@map("automation_setting_snapshots")
+  @@index([updatedById])
+}
+
+model Notification {
+  notificationId   String  @id @default(uuid()) @map("notification_id") @db.Uuid
+  userId           String  @map("user_id") @db.Uuid
+  progressTicketId String  @map("progress_ticket_id") @db.Uuid
+  message          String  @db.Text
+  isRead           Boolean @default(false) @map("is_read")
+  isDeleted        Boolean @default(false) @map("is_deleted")
+  readAt           DateTime? @map("read_at") @db.Timestamptz
+
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  user     User           @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  progress TicketProgress @relation(fields: [progressTicketId], references: [progressId], onDelete: Cascade)
+
+  @@map("notification")
+  @@index([userId])
+  @@index([progressTicketId])
+}
+
+model MessageDeliverySnapshot {
+  messageDeliveryLogId String @id @default(uuid()) @map("message_delivery_log_id") @db.Uuid
+  progressId           String @map("progress_id") @db.Uuid
+  channel              String @db.VarChar(255)
+  recipient            String @db.VarChar(255)
+  provider             String @db.VarChar(255)
+  providerMessageId    String @map("provider_message_id") @db.VarChar(255)
+  deliveryStatus       String @map("delivery_status") @db.VarChar(255)
+  errorMessage         String @map("error_message") @db.Text
+  deliveredAt          DateTime @map("delivered_at") @db.Timestamptz
+
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+
+  progress TicketProgress @relation(fields: [progressId], references: [progressId], onDelete: Cascade)
+
+  @@map("message_delivery_snapshots")
+  @@index([progressId])
 }

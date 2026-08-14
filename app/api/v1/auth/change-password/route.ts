@@ -3,8 +3,6 @@ import { prisma } from "@/lib/db/prisma";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { getApiSession } from "@/lib/auth/dal";
 import { rateLimit } from "@/lib/rate-limit";
-import { writeAuditLog } from "@/lib/audit-log";
-import { getRequestMeta } from "@/lib/auth/request-meta";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { changePasswordSchema } from "@/lib/validation/auth-schemas";
 import type { ApiResult } from "@/lib/api/types";
@@ -36,7 +34,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { ipAddress, userAgent } = await getRequestMeta();
   const limitResult = await rateLimit({
     key: `change-password:${session.userId}`,
     limit: 5,
@@ -55,25 +52,12 @@ export async function POST(request: NextRequest) {
   }
 
   if (!(await verifyPassword(parsed.data.currentPassword, user.password))) {
-    await writeAuditLog({
-      userId: user.userId,
-      eventType: "password_change_failed",
-      ipAddress,
-      userAgent,
-    });
     return NextResponse.json<ApiResult>({ error: "Password lama tidak sesuai." }, { status: 400 });
   }
 
   await prisma.user.update({
     where: { userId: user.userId },
     data: { password: await hashPassword(parsed.data.newPassword) },
-  });
-
-  await writeAuditLog({
-    userId: user.userId,
-    eventType: "password_change_success",
-    ipAddress,
-    userAgent,
   });
 
   return NextResponse.json<ApiResult>({ success: "Password berhasil diubah." });

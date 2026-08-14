@@ -1,22 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
-import { getApiSession } from "@/lib/auth/dal";
 import { verifyPassword } from "@/lib/auth/password";
-import { generateRecoveryCodePlaintexts, replaceRecoveryCodes } from "@/lib/auth/recovery-codes";
+import {
+  countRemainingRecoveryCodes,
+  generateRecoveryCodePlaintexts,
+  replaceRecoveryCodes,
+} from "@/lib/auth/recovery-codes";
 import { rateLimit } from "@/lib/rate-limit";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { mfaReauthSchema } from "@/lib/validation/auth-schemas";
+import { requireApiSession } from "@/lib/api/auth";
+import { toPublicRecoveryCode } from "@/lib/api/dtos";
 import type { ApiResult } from "@/lib/api/types";
+
+export async function GET() {
+  const { session, response } = await requireApiSession();
+  if (!session) return response;
+
+  const [codes, remaining] = await Promise.all([
+    prisma.mfaRecoveryCode.findMany({
+      where: { userId: session.userId },
+      orderBy: { createdAt: "desc" },
+    }),
+    countRemainingRecoveryCodes(session.userId),
+  ]);
+
+  return NextResponse.json<ApiResult>({
+    data: {
+      remaining,
+      codes: codes.map(toPublicRecoveryCode),
+    },
+  });
+}
 
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) {
     return NextResponse.json<ApiResult>({ error: "Permintaan tidak valid." }, { status: 403 });
   }
 
-  const session = await getApiSession();
-  if (!session) {
-    return NextResponse.json<ApiResult>({ error: "Sesi tidak valid. Silakan login kembali." }, { status: 401 });
-  }
+  const { session, response } = await requireApiSession();
+  if (!session) return response;
 
   const body = await request.json().catch(() => null);
   const parsed = mfaReauthSchema.safeParse({ currentPassword: body?.currentPassword });
@@ -53,5 +76,6 @@ export async function POST(request: NextRequest) {
   return NextResponse.json<ApiResult>({
     success: "Kode pemulihan baru berhasil dibuat. Kode lama tidak berlaku lagi.",
     recoveryCodes,
+    data: { remaining: recoveryCodes.length },
   });
 }

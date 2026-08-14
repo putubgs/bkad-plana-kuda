@@ -1,18 +1,7 @@
 import { create } from "zustand";
-import {
-  DATA_LAYANAN_MASUK,
-  type CatatanProgres,
-  type LayananMasuk,
-  type StatusLayanan,
-} from "@/data/data-layanan";
-
-function cloneInitialTickets(): LayananMasuk[] {
-  return DATA_LAYANAN_MASUK.map((ticket) => ({
-    ...ticket,
-    bidangUptb: [...ticket.bidangUptb],
-    catatanProgres: ticket.catatanProgres.map((entry) => ({ ...entry })),
-  }));
-}
+import { getJson } from "@/lib/api-client";
+import type { ApiResult } from "@/lib/api/types";
+import type { CatatanProgres, LayananMasuk, StatusLayanan } from "@/data/data-layanan";
 
 export interface NewCatatanProgresInput {
   status: StatusLayanan;
@@ -26,19 +15,41 @@ export interface NewCatatanProgresInput {
 
 interface LayananStore {
   tickets: LayananMasuk[];
+  loading: boolean;
+  error: string | null;
   openTicketId: string | null;
+  fetchTickets: () => Promise<void>;
   openTicketDetail: (ticketId: string) => void;
   closeTicketDetail: () => void;
   addCatatanProgres: (ticketId: string, input: NewCatatanProgresInput) => void;
 }
 
-/**
- * In-memory only: state lives for the lifetime of the tab and is
- * re-seeded from the dummy dataset on every page load/refresh.
- */
-export const useLayananStore = create<LayananStore>((set) => ({
-  tickets: cloneInitialTickets(),
+export const useLayananStore = create<LayananStore>((set, get) => ({
+  tickets: [],
+  loading: false,
+  error: null,
   openTicketId: null,
+
+  fetchTickets: async () => {
+    if (get().loading) return;
+    set({ loading: true, error: null });
+
+    try {
+      const result = await getJson<ApiResult>("/api/v1/tickets?pageSize=100");
+      if (result.error) {
+        set({ loading: false, error: result.error });
+        return;
+      }
+
+      set({
+        tickets: Array.isArray(result.data) ? (result.data as LayananMasuk[]) : [],
+        loading: false,
+        error: null,
+      });
+    } catch {
+      set({ loading: false, error: "Gagal memuat daftar layanan." });
+    }
+  },
 
   openTicketDetail: (ticketId) => set({ openTicketId: ticketId }),
   closeTicketDetail: () => set({ openTicketId: null }),
