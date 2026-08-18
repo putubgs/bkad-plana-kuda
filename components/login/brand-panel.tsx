@@ -19,6 +19,8 @@ export default function LoginBrandPanel() {
             alt="Logo Nusa Tenggara Barat"
             width={140}
             height={207}
+            priority
+            loading="eager"
             className="h-44 w-auto drop-shadow-2xl"
           />
           <div>

@@ -38,6 +38,7 @@ export default function RatingView({ noTiket }: { noTiket?: string }) {
             width={36}
             height={53}
             priority
+            loading="eager"
             className="h-9 w-auto"
           />
           <div className="leading-tight">

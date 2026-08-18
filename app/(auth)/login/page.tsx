@@ -23,6 +23,7 @@ export default async function LoginPage({
               width={56}
               height={83}
               priority
+              loading="eager"
               className="h-14 w-auto"
             />
             <div className="text-center leading-tight">
