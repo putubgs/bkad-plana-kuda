@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/constants";
 
 // Fully public routes: no session cookie check either way.
-const PUBLIC_PREFIXES = ["/rating", "/konsultasi"];
+const PUBLIC_PREFIXES = ["/rating", "/konsultasi", "/file-upload-test"];
 
 // Auth pages that a logged-in user shouldn't need to revisit.
 const GUEST_ONLY_ROUTES = ["/login"];

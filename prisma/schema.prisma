@@ -175,6 +175,18 @@ model TicketProgressDocument {
   @@index([uploadedById])
 }
 
+model TemporaryDocument{
+  documentId        String @id @default(uuid()) @map("document_id") @db.Uuid
+  fileName          String @unique @db.VarChar(255)
+  objectKey         String @unique @map("object_key") @db.Text
+  mimeType          String @map("mime_type") @db.VarChar(255)
+  fileSize          BigInt @map("file_size")
+  createdAt DateTime  @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("temporary_documents")
+}
+
 model Rating {
   ratingId      String   @id @default(uuid()) @map("rating_id") @db.Uuid
   ratingValue   Decimal? @map("rating_value") @db.Decimal(4, 2)
