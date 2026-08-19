@@ -8,29 +8,23 @@ import {
   DepartmentNotFoundError,
   TICKET_DETAIL_INCLUDE,
 } from "@/lib/tickets/queries";
+import { findAccessibleTicket } from "@/lib/tickets/scope";
 import { toLayananMasuk } from "@/lib/tickets/to-layanan-masuk";
 import type { ApiResult } from "@/lib/api/types";
 
 type RouteContext = { params: Promise<{ ticketNumber: string }> };
-
-async function findActiveTicket(ticketNumber: string) {
-  return prisma.ticket.findFirst({
-    where: { ticketNumber, isDeleted: false },
-    include: TICKET_DETAIL_INCLUDE,
-  });
-}
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { session, response } = await requireApiSession();
   if (!session) return response;
 
   const { ticketNumber } = await context.params;
-  const ticket = await findActiveTicket(decodeURIComponent(ticketNumber));
-  if (!ticket) {
+  const accessible = await findAccessibleTicket(session.user, decodeURIComponent(ticketNumber));
+  if (!accessible) {
     return NextResponse.json<ApiResult>({ error: "Tiket tidak ditemukan." }, { status: 404 });
   }
 
-  return NextResponse.json<ApiResult>({ data: toLayananMasuk(ticket) });
+  return NextResponse.json<ApiResult>({ data: accessible.mapped });
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
@@ -43,8 +37,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   const { ticketNumber } = await context.params;
   const decoded = decodeURIComponent(ticketNumber);
-  const existing = await prisma.ticket.findFirst({ where: { ticketNumber: decoded, isDeleted: false } });
-  if (!existing) {
+  const accessible = await findAccessibleTicket(session.user, decoded);
+  if (!accessible) {
     return NextResponse.json<ApiResult>({ error: "Tiket tidak ditemukan." }, { status: 404 });
   }
 
@@ -122,8 +116,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
   const { ticketNumber } = await context.params;
   const decoded = decodeURIComponent(ticketNumber);
-  const existing = await prisma.ticket.findFirst({ where: { ticketNumber: decoded, isDeleted: false } });
-  if (!existing) {
+  const accessible = await findAccessibleTicket(session.user, decoded);
+  if (!accessible) {
     return NextResponse.json<ApiResult>({ error: "Tiket tidak ditemukan." }, { status: 404 });
   }
 

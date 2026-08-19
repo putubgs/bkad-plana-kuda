@@ -1,3 +1,5 @@
+"use client";
+
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import MoveToInboxOutlinedIcon from "@mui/icons-material/MoveToInboxOutlined";
 import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
@@ -6,7 +8,9 @@ import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutli
 import HighlightOffOutlinedIcon from "@mui/icons-material/HighlightOffOutlined";
 import type { ComponentType } from "react";
 import type { SvgIconProps } from "@mui/material/SvgIcon";
-import { DATA_LAYANAN_MASUK, type StatusLayanan } from "@/data/data-layanan";
+import type { StatusLayanan } from "@/data/data-layanan";
+import { useIsAdmin } from "@/components/auth/current-user-provider";
+import { useLayananStore } from "@/store/use-layanan-store";
 
 interface StatCardConfig {
   key: "total" | StatusLayanan;
@@ -61,27 +65,28 @@ const STAT_CARDS: StatCardConfig[] = [
   },
 ];
 
-function countByStatus(status: StatusLayanan) {
-  return DATA_LAYANAN_MASUK.filter((ticket) => ticket.status === status).length;
-}
-
 export default function StatsCards() {
+  const tickets = useLayananStore((state) => state.tickets);
+  const hideDiterima = useIsAdmin();
+  const cards = hideDiterima ? STAT_CARDS.filter((card) => card.key !== "Diterima") : STAT_CARDS;
+
   const counts: Record<StatCardConfig["key"], number> = {
-    total: DATA_LAYANAN_MASUK.length,
-    Diterima: countByStatus("Diterima"),
-    Diverifikasi: countByStatus("Diverifikasi"),
-    Diproses: countByStatus("Diproses"),
-    Selesai: countByStatus("Selesai"),
-    Ditolak: countByStatus("Ditolak"),
+    total: tickets.length,
+    Diterima: tickets.filter((ticket) => ticket.status === "Diterima").length,
+    Diverifikasi: tickets.filter((ticket) => ticket.status === "Diverifikasi").length,
+    Diproses: tickets.filter((ticket) => ticket.status === "Diproses").length,
+    Selesai: tickets.filter((ticket) => ticket.status === "Selesai").length,
+    Ditolak: tickets.filter((ticket) => ticket.status === "Ditolak").length,
   };
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {STAT_CARDS.map(({ key, label, subtitle, icon: Icon, iconClassName }) => (
-        <div
-          key={key}
-          className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
-        >
+    <div
+      className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${
+        cards.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-6"
+      }`}
+    >
+      {cards.map(({ key, label, subtitle, icon: Icon, iconClassName }) => (
+        <div key={key} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2.5">
             <span
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${iconClassName}`}

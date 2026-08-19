@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import { useAdminBidangStore } from "@/store/use-admin-bidang-store";
@@ -10,6 +10,9 @@ import TambahAdminForm from "@/components/pengaturan/tambah-admin-form";
 
 export default function BidangUptbList() {
   const bidangList = useAdminBidangStore((state) => state.bidangList);
+  const loading = useAdminBidangStore((state) => state.loading);
+  const error = useAdminBidangStore((state) => state.error);
+  const fetchAdmins = useAdminBidangStore((state) => state.fetchAdmins);
   const toggleStatus = useAdminBidangStore((state) => state.toggleStatus);
   const updateAdmin = useAdminBidangStore((state) => state.updateAdmin);
   const deleteAdmin = useAdminBidangStore((state) => state.deleteAdmin);
@@ -17,6 +20,10 @@ export default function BidangUptbList() {
 
   const [ratingModalId, setRatingModalId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+
+  useEffect(() => {
+    void fetchAdmins();
+  }, [fetchAdmins]);
 
   const aktifCount = useMemo(
     () => bidangList.filter((item) => item.status === "Aktif").length,
@@ -26,7 +33,7 @@ export default function BidangUptbList() {
   const ratingModalBidang = bidangList.find((item) => item.id === ratingModalId) ?? null;
 
   function handleDeleteAdmin(id: string) {
-    deleteAdmin(id);
+    void deleteAdmin(id);
     setRatingModalId((prev) => (prev === id ? null : prev));
   }
 
@@ -63,16 +70,24 @@ export default function BidangUptbList() {
 
       {showAddForm ? (
         <TambahAdminForm
-          onAdd={(values) => {
-            addAdmin(values);
-            setShowAddForm(false);
+          onAdd={async (values) => {
+            const errorMessage = await addAdmin(values);
+            if (!errorMessage) {
+              setShowAddForm(false);
+            }
           }}
           onCancel={() => setShowAddForm(false)}
         />
       ) : null}
 
+      {error ? (
+        <p className="border-t border-slate-100 px-5 py-3 text-xs font-medium text-red-600">{error}</p>
+      ) : null}
+
       <div>
-        {bidangList.length === 0 ? (
+        {loading && bidangList.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-slate-400">Memuat admin bidang/UPTB...</p>
+        ) : bidangList.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-slate-400">
             Belum ada admin bidang/UPTB.
           </p>
@@ -82,8 +97,12 @@ export default function BidangUptbList() {
               key={bidang.id}
               index={index + 1}
               bidang={bidang}
-              onToggleStatus={() => toggleStatus(bidang.id)}
-              onUpdateAdmin={(values) => updateAdmin(bidang.id, values)}
+              onToggleStatus={() => {
+                void toggleStatus(bidang.id);
+              }}
+              onUpdateAdmin={(values) => {
+                void updateAdmin(bidang.id, values);
+              }}
               onDeleteAdmin={() => handleDeleteAdmin(bidang.id)}
               onOpenRatings={() => setRatingModalId(bidang.id)}
             />

@@ -1,10 +1,15 @@
+"use client";
+
 import CheckIcon from "@mui/icons-material/Check";
-import { STATUS_ORDER } from "@/data/data-layanan";
+import { statusesForRole } from "@/lib/auth/roles";
 import type { StatusLayanan } from "@/data/data-layanan";
 import { STATUS_META } from "@/components/tracking-layanan/status-config";
+import { useCurrentUser } from "@/components/auth/current-user-provider";
 
 export default function StatusFlow({ status }: { status: StatusLayanan }) {
-  const currentIndex = STATUS_ORDER.indexOf(status);
+  const { role } = useCurrentUser();
+  const steps = statusesForRole(role);
+  const currentIndex = steps.indexOf(status);
 
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-5">
@@ -13,7 +18,7 @@ export default function StatusFlow({ status }: { status: StatusLayanan }) {
       </p>
 
       <div className="flex w-full items-start justify-center">
-        {STATUS_ORDER.map((step, index) => {
+        {steps.map((step, index) => {
           const meta = STATUS_META[step];
           const isDone = index < currentIndex;
           const isCurrent = index === currentIndex;
@@ -45,7 +50,7 @@ export default function StatusFlow({ status }: { status: StatusLayanan }) {
                 </div>
 
                 {/* Right Line */}
-                {index !== STATUS_ORDER.length - 1 ? (
+                {index !== steps.length - 1 ? (
                   <div className="h-px flex-1 bg-slate-200 ml-6" />
                 ) : (
                   <div className="flex-1" />
@@ -54,7 +59,7 @@ export default function StatusFlow({ status }: { status: StatusLayanan }) {
 
               {/* Status Text */}
               <div
-                className={`mt-2 text-center text-xs ${index == 0 ? "mr-6" : "mr-0"} ${index == 4 ? "ml-6" : "ml-0"} ${
+                className={`mt-2 text-center text-xs ${index == 0 ? "mr-6" : "mr-0"} ${index == steps.length - 1 ? "ml-6" : "ml-0"} ${
                   isFuture ? "text-slate-400" : `font-semibold ${meta.text}`
                 }`}
               >

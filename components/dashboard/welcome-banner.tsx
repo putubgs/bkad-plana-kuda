@@ -1,6 +1,9 @@
+"use client";
+
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import { DATA_LAYANAN_MASUK } from "@/data/data-layanan";
+import { useCurrentUser } from "@/components/auth/current-user-provider";
+import { useLayananStore } from "@/store/use-layanan-store";
 
 function getFormattedToday() {
   return new Date().toLocaleDateString("id-ID", {
@@ -12,9 +15,10 @@ function getFormattedToday() {
 }
 
 export default function WelcomeBanner() {
-  const perluTindakLanjut = DATA_LAYANAN_MASUK.filter(
-    (ticket) => ticket.perluTindakLanjut
-  ).length;
+  const user = useCurrentUser();
+  const tickets = useLayananStore((state) => state.tickets);
+  const perluTindakLanjut = tickets.filter((ticket) => ticket.perluTindakLanjut).length;
+  const isAdmin = user.role.toLowerCase() === "admin";
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0F2044] via-[#132a56] to-blue-600 px-6 py-5 text-white">
@@ -23,11 +27,13 @@ export default function WelcomeBanner() {
 
       <div className="relative z-10">
         <span className="inline-block rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/90">
-          DASHBOARD ADMIN
+          {isAdmin ? "DASHBOARD ADMIN BIDANG" : "DASHBOARD SUPERADMIN"}
         </span>
-        <h1 className="mt-2 text-xl font-bold">Selamat Datang, Pokja Plana Kuda</h1>
+        <h1 className="mt-2 text-xl font-bold">Selamat Datang, {user.username}</h1>
         <p className="mt-1 text-sm text-white/70">
-          Badan Keuangan dan Aset Daerah Provinsi Nusa Tenggara Barat
+          {isAdmin && user.departmentName
+            ? user.departmentName
+            : "Badan Keuangan dan Aset Daerah Provinsi Nusa Tenggara Barat"}
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-white/80">

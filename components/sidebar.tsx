@@ -13,10 +13,12 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { postJson } from "@/lib/api-client";
 import type { ApiResult } from "@/lib/api/types";
+import { isSuperadmin } from "@/lib/auth/roles";
 
 export interface SidebarUser {
   username: string;
   role: string;
+  departmentName?: string | null;
 }
 
 type NavItem = {
@@ -24,6 +26,7 @@ type NavItem = {
   href: string;
   icon: ComponentType<{ fontSize?: "small" | "medium" | "large" | "inherit" }>;
   badge?: number;
+  superadminOnly?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -43,6 +46,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Laporan Layanan",
     href: "/laporan-layanan",
     icon: LeaderboardOutlinedIcon,
+    superadminOnly: true,
   },
   { label: "Pengaturan", href: "/pengaturan", icon: SettingsOutlinedIcon },
 ];
@@ -52,6 +56,9 @@ export default function Sidebar({ user }: { user: SidebarUser }) {
   const router = useRouter();
   const [isLoggingOut, startLogoutTransition] = useTransition();
   const initials = user.username.slice(0, 2).toUpperCase();
+  const navItems = NAV_ITEMS.filter(
+    (item) => !item.superadminOnly || isSuperadmin(user.role)
+  );
 
   function handleLogout() {
     startLogoutTransition(async () => {
@@ -85,7 +92,7 @@ export default function Sidebar({ user }: { user: SidebarUser }) {
           Menu Utama
         </p>
         <ul className="flex flex-col gap-1">
-          {NAV_ITEMS.map(({ label, href, icon: Icon, badge }) => {
+          {navItems.map(({ label, href, icon: Icon, badge }) => {
             const isActive = pathname === href;
 
             return (
@@ -131,7 +138,9 @@ export default function Sidebar({ user }: { user: SidebarUser }) {
           </div>
           <div className="min-w-0 leading-tight">
             <p className="truncate text-sm font-bold text-white">{user.username}</p>
-            <p className="truncate text-xs text-slate-400 capitalize">{user.role}</p>
+            <p className="truncate text-xs text-slate-400 capitalize">
+              {user.departmentName ? `${user.role} · ${user.departmentName}` : user.role}
+            </p>
           </div>
         </div>
       </div>

@@ -6,25 +6,26 @@ export interface NewAdminInput {
   bidangNama: string;
   email: string;
   biografi: string;
+  password: string;
 }
 
 export default function TambahAdminForm({
   onAdd,
   onCancel,
 }: {
-  onAdd: (values: NewAdminInput) => void;
+  onAdd: (values: NewAdminInput) => void | Promise<void>;
   onCancel: () => void;
 }) {
   const [form, setForm] = useState<NewAdminInput>({
     bidangNama: "",
     email: "",
     biografi: "",
+    password: "",
   });
 
   function handleSubmit() {
-    if (!form.bidangNama.trim() || !form.email.trim()) return;
-    onAdd(form);
-    setForm({ bidangNama: "", email: "", biografi: "" });
+    if (!form.bidangNama.trim() || !form.email.trim() || !form.password.trim()) return;
+    void onAdd(form);
   }
 
   return (
@@ -50,6 +51,18 @@ export default function TambahAdminForm({
             value={form.email}
             onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
             placeholder="admin.bidang@bkad.ntbprov.go.id"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold tracking-wider text-slate-400">
+            PASSWORD LOGIN
+          </label>
+          <input
+            type="password"
+            value={form.password}
+            onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+            placeholder="Minimal 8 karakter, huruf dan angka"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-400"
           />
         </div>

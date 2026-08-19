@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { type StatusFilterValue } from "@/data/data-layanan";
+import { isAdmin } from "@/lib/auth/roles";
 import { exportLayananToExcel } from "@/lib/export-layanan-excel";
 import StatusBadge from "@/components/layanan-masuk/status-badge";
 import DurationBadge from "@/components/layanan-masuk/duration-badge";
@@ -10,6 +11,7 @@ import BidangTags from "@/components/layanan-masuk/bidang-tags";
 import TicketCell from "@/components/layanan-masuk/ticket-cell";
 import StatusTabs from "@/components/layanan-masuk/status-tabs";
 import ExportButton from "@/components/layanan-masuk/export-button";
+import { useCurrentUser } from "@/components/auth/current-user-provider";
 import { useLayananStore } from "@/store/use-layanan-store";
 
 const COLUMNS = [
@@ -28,15 +30,25 @@ export default function LayananTable() {
   const loading = useLayananStore((state) => state.loading);
   const error = useLayananStore((state) => state.error);
   const openTicketDetail = useLayananStore((state) => state.openTicketDetail);
+  const { role, departmentName } = useCurrentUser();
   const [activeStatus, setActiveStatus] = useState<StatusFilterValue>("Semua");
   const [exporting, setExporting] = useState(false);
 
+  const scopedTickets = useMemo(() => {
+    if (!isAdmin(role)) return tickets;
+    return tickets.filter(
+      (item) =>
+        item.status !== "Diterima" &&
+        (!departmentName || item.bidangUptb.includes(departmentName))
+    );
+  }, [tickets, role, departmentName]);
+
   const filteredData = useMemo(() => {
     if (activeStatus === "Semua") {
-      return tickets;
+      return scopedTickets;
     }
-    return tickets.filter((item) => item.status === activeStatus);
-  }, [tickets, activeStatus]);
+    return scopedTickets.filter((item) => item.status === activeStatus);
+  }, [scopedTickets, activeStatus]);
 
   const handleExportFiltered = async () => {
     setExporting(true);
@@ -57,7 +69,7 @@ export default function LayananTable() {
             Daftar Layanan Masuk Plana Kuda
           </h2>
             <p className="text-xs text-slate-400">
-              {filteredData.length} dari {tickets.length} layanan ditampilkan
+              {filteredData.length} dari {scopedTickets.length} layanan ditampilkan
             </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -134,7 +146,7 @@ export default function LayananTable() {
                 </td>
               </tr>
             ))}
-            {loading && tickets.length === 0 ? (
+            {loading && scopedTickets.length === 0 ? (
               <tr>
                 <td
                   colSpan={COLUMNS.length}

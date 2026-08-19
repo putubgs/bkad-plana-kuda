@@ -3,6 +3,7 @@ import Sidebar from "@/components/sidebar";
 import Navbar from "@/components/navbar";
 import TicketDetailModal from "@/components/ticket-detail/ticket-detail-modal";
 import TicketsBootstrap from "@/components/layanan-masuk/tickets-bootstrap";
+import { CurrentUserProvider } from "@/components/auth/current-user-provider";
 import { getCurrentUser } from "@/lib/auth/dal";
 
 export default async function DashboardLayout({
@@ -14,14 +15,16 @@ export default async function DashboardLayout({
   const user = await getCurrentUser();
 
   return (
-    <div className="flex h-screen w-full">
-      <Sidebar user={user} />
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Navbar user={user} />
-        <main className="flex-1 overflow-y-auto bg-slate-50">{children}</main>
+    <CurrentUserProvider user={user}>
+      <div className="flex h-screen w-full">
+        <Sidebar user={user} />
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <Navbar user={user} />
+          <main className="flex-1 overflow-y-auto bg-slate-50">{children}</main>
+        </div>
+        <TicketDetailModal />
+        <TicketsBootstrap />
       </div>
-      <TicketDetailModal />
-      <TicketsBootstrap />
-    </div>
+    </CurrentUserProvider>
   );
 }

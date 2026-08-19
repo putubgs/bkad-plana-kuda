@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
-import { isSuperadmin, requireApiSession } from "@/lib/api/auth";
+import { isAdmin, isSuperadmin, requireApiSession } from "@/lib/api/auth";
 import { createTicketSchema } from "@/lib/validation/ticket-schemas";
 import {
   assertDepartmentNamesExist,
@@ -9,6 +9,7 @@ import {
   generateTicketNumber,
   TICKET_DETAIL_INCLUDE,
 } from "@/lib/tickets/queries";
+import { departmentTicketWhere, filterTicketsForActor } from "@/lib/tickets/scope";
 import { toLayananMasuk } from "@/lib/tickets/to-layanan-masuk";
 import type { ApiResult } from "@/lib/api/types";
 
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest) {
 
   const where = {
     ...(includeDeleted ? {} : { isDeleted: false }),
+    ...departmentTicketWhere(session.user),
     ...(isCompletedParam === "true" ? { isCompleted: true } : {}),
     ...(isCompletedParam === "false" ? { isCompleted: false } : {}),
     ...(q
@@ -54,9 +56,11 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
+  const data = filterTicketsForActor(session.user, rows.map(toLayananMasuk));
+
   return NextResponse.json<ApiResult>({
-    data: rows.map(toLayananMasuk),
-    meta: { page, pageSize, total },
+    data,
+    meta: { page, pageSize, total: isAdmin(session.user.role) ? data.length : total },
   });
 }
 
@@ -83,7 +87,13 @@ export async function POST(request: NextRequest) {
   const { departmentNames = [], ticketNumber: requestedNumber, ...fields } = parsed.data;
 
   try {
-    const uniqueDepartments = await assertDepartmentNamesExist(departmentNames);
+    let uniqueDepartments = await assertDepartmentNamesExist(departmentNames);
+    if (isAdmin(session.user.role)) {
+      if (!session.user.departmentName) {
+        return NextResponse.json<ApiResult>({ error: "Akses ditolak." }, { status: 403 });
+      }
+      uniqueDepartments = [session.user.departmentName];
+    }
     const ticketNumber = requestedNumber ?? (await generateTicketNumber());
 
     const ticket = await prisma.ticket.create({

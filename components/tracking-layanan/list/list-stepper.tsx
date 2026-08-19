@@ -1,8 +1,11 @@
+"use client";
+
 import type { ReactNode } from "react";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import { STATUS_PIPELINE } from "@/data/data-layanan";
+import { pipelineForRole } from "@/lib/auth/roles";
 import type { StatusLayanan } from "@/data/data-layanan";
+import { useCurrentUser } from "@/components/auth/current-user-provider";
 
 const ACTIVE_COLOR: Record<StatusLayanan, string> = {
   Diterima: "bg-blue-600",
@@ -13,12 +16,14 @@ const ACTIVE_COLOR: Record<StatusLayanan, string> = {
 };
 
 export default function ListStepper({ status }: { status: StatusLayanan }) {
+  const { role } = useCurrentUser();
+  const pipeline = pipelineForRole(role);
   const isRejected = status === "Ditolak";
-  const currentIndex = isRejected ? -1 : STATUS_PIPELINE.indexOf(status);
+  const currentIndex = isRejected ? -1 : pipeline.indexOf(status);
 
   return (
     <div className="flex items-center">
-      {STATUS_PIPELINE.map((step, index) => {
+      {pipeline.map((step, index) => {
         const stepNumber = index + 1;
         const isPassed = !isRejected && index < currentIndex;
         const isCurrent = !isRejected && index === currentIndex;

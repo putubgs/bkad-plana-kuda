@@ -6,14 +6,16 @@ import type { StatusLayanan } from "@/data/data-layanan";
 export default function StatusSummaryCards({
   counts,
   total,
+  statuses = STATUS_ORDER,
 }: {
   counts: Record<StatusLayanan, number>;
   total: number;
+  statuses?: StatusLayanan[];
 }) {
   return (
     <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex items-stretch gap-2">
-        {STATUS_ORDER.map((status, index) => {
+        {statuses.map((status, index) => {
           const meta = STATUS_META[status];
           const Icon = meta.icon;
           const count = counts[status] ?? 0;
@@ -38,7 +40,7 @@ export default function StatusSummaryCards({
                 </div>
               </div>
 
-              {index < STATUS_ORDER.length - 1 ? (
+              {index < statuses.length - 1 ? (
                 <ChevronRightOutlinedIcon fontSize="small" className="shrink-0 text-slate-300" />
               ) : null}
             </div>
@@ -47,7 +49,7 @@ export default function StatusSummaryCards({
       </div>
 
       <div className="mt-4 flex h-1.5 overflow-hidden rounded-full bg-slate-100">
-        {STATUS_ORDER.map((status) => {
+        {statuses.map((status) => {
           const meta = STATUS_META[status];
           const count = counts[status] ?? 0;
           const percent = total > 0 ? (count / total) * 100 : 0;

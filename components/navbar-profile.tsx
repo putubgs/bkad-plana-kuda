@@ -3,6 +3,7 @@ import KeyboardArrowDownOutlinedIcon from "@mui/icons-material/KeyboardArrowDown
 export interface NavbarProfileUser {
   username: string;
   role: string;
+  departmentName?: string | null;
 }
 
 export default function NavbarProfile({ user }: { user: NavbarProfileUser }) {
@@ -18,7 +19,9 @@ export default function NavbarProfile({ user }: { user: NavbarProfileUser }) {
       </div>
       <div className="hidden text-left leading-tight sm:block">
         <p className="text-sm font-bold text-slate-900">{user.username}</p>
-        <p className="text-xs text-slate-400 capitalize">{user.role}</p>
+        <p className="text-xs text-slate-400 capitalize">
+          {user.departmentName ? `${user.role} · ${user.departmentName}` : user.role}
+        </p>
       </div>
       <KeyboardArrowDownOutlinedIcon
         fontSize="small"

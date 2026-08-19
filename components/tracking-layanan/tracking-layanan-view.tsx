@@ -10,12 +10,25 @@ import KanbanBoard from "@/components/tracking-layanan/kanban/kanban-board";
 import ListView from "@/components/tracking-layanan/list/list-view";
 import { STATUS_ORDER } from "@/data/data-layanan";
 import type { StatusLayanan } from "@/data/data-layanan";
+import { statusesForRole, isAdmin } from "@/lib/auth/roles";
+import { useCurrentUser } from "@/components/auth/current-user-provider";
 import { useLayananStore } from "@/store/use-layanan-store";
 
 export default function TrackingLayananView() {
   const tickets = useLayananStore((state) => state.tickets);
+  const { role, departmentName } = useCurrentUser();
+  const visibleStatuses = statusesForRole(role);
   const [view, setView] = useState<TrackingViewMode>("kanban");
   const [search, setSearch] = useState("");
+
+  const scopedTickets = useMemo(() => {
+    if (!isAdmin(role)) return tickets;
+    return tickets.filter(
+      (ticket) =>
+        ticket.status !== "Diterima" &&
+        (!departmentName || ticket.bidangUptb.includes(departmentName))
+    );
+  }, [tickets, role, departmentName]);
 
   const totalCounts = useMemo(() => {
     const counts = STATUS_ORDER.reduce(
@@ -23,41 +36,39 @@ export default function TrackingLayananView() {
       {} as Record<StatusLayanan, number>
     );
 
-    tickets.forEach((ticket) => {
+    scopedTickets.forEach((ticket) => {
       counts[ticket.status] += 1;
     });
 
     return counts;
-  }, [tickets]);
+  }, [scopedTickets]);
 
   const perluTindakLanjutCount = useMemo(
-    () => tickets.filter((ticket) => ticket.perluTindakLanjut).length,
-    [tickets]
+    () => scopedTickets.filter((ticket) => ticket.perluTindakLanjut).length,
+    [scopedTickets]
   );
 
-  // Single filtered dataset shared by both the Kanban board and the List
-  // view, so switching views never changes what tickets are shown.
   const filteredTickets = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (query.length === 0) return tickets;
+    if (query.length === 0) return scopedTickets;
 
-    return tickets.filter(
+    return scopedTickets.filter(
       (ticket) =>
         ticket.noTiket.toLowerCase().includes(query) ||
         ticket.namaPemohon.toLowerCase().includes(query) ||
         ticket.asalInstansi.toLowerCase().includes(query)
     );
-  }, [tickets, search]);
+  }, [scopedTickets, search]);
 
   return (
     <div className="flex flex-col gap-5 p-6">
       <PipelineHeader
-        total={tickets.length}
+        total={scopedTickets.length}
         perluTindakLanjut={perluTindakLanjutCount}
       />
 
-      <StatusSummaryCards counts={totalCounts} total={tickets.length} />
+      <StatusSummaryCards counts={totalCounts} total={scopedTickets.length} statuses={visibleStatuses} />
 
       <TrackingToolbar
         search={search}
@@ -68,7 +79,7 @@ export default function TrackingLayananView() {
       />
 
       {view === "kanban" ? (
-        <KanbanBoard tickets={filteredTickets} />
+        <KanbanBoard tickets={filteredTickets} statuses={visibleStatuses} />
       ) : (
         <ListView tickets={filteredTickets} />
       )}

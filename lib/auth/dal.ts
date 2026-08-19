@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import { getSessionToken, hashToken, destroySession } from "@/lib/auth/session";
+import type { CurrentUser } from "@/lib/auth/roles";
 
 /**
  * Secure session check: reads the raw token from the cookie, then validates it
@@ -35,7 +36,7 @@ export const verifySession = cache(async () => {
 });
 
 /** DTO-shaped current user - never exposes password hash, mfaSecret, or reset tokens. */
-export const getCurrentUser = cache(async () => {
+export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   const session = await verifySession();
   const { user } = session;
 

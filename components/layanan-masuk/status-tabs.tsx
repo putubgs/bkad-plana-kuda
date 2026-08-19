@@ -1,6 +1,8 @@
 "use client";
 
-import { STATUS_FILTERS, type StatusFilterValue } from "@/data/data-layanan";
+import { statusFiltersForRole } from "@/lib/auth/roles";
+import { type StatusFilterValue } from "@/data/data-layanan";
+import { useCurrentUser } from "@/components/auth/current-user-provider";
 
 export default function StatusTabs({
   active,
@@ -9,9 +11,12 @@ export default function StatusTabs({
   active: StatusFilterValue;
   onChange: (value: StatusFilterValue) => void;
 }) {
+  const { role } = useCurrentUser();
+  const filters = statusFiltersForRole(role);
+
   return (
     <div className="flex flex-wrap items-center gap-1 rounded-full bg-slate-100 p-1">
-      {STATUS_FILTERS.map((filter) => {
+      {filters.map((filter) => {
         const isActive = filter.value === active;
 
         return (

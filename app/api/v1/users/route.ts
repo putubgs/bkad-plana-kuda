@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { isSameOrigin } from "@/lib/auth/verify-origin";
 import { createUserSchema } from "@/lib/validation/auth-schemas";
-import { isSuperadmin, requireApiSession } from "@/lib/api/auth";
+import { isSuperadmin, requireApiSession, requireSuperadmin } from "@/lib/api/auth";
 import { parsePagination, USER_PUBLIC_SELECT } from "@/lib/api/dtos";
 import type { ApiResult } from "@/lib/api/types";
 
@@ -11,11 +11,18 @@ export async function GET(request: NextRequest) {
   const { session, response } = await requireApiSession();
   if (!session) return response;
 
+  const denied = requireSuperadmin(session.user.role);
+  if (denied) return denied;
+
   const { searchParams } = request.nextUrl;
   const { page, pageSize, skip, take } = parsePagination(searchParams);
   const includeDeleted = searchParams.get("includeDeleted") === "true" && isSuperadmin(session.user.role);
+  const role = searchParams.get("role")?.trim();
 
-  const where = includeDeleted ? {} : { isDeleted: false };
+  const where = {
+    ...(includeDeleted ? {} : { isDeleted: false }),
+    ...(role ? { role } : {}),
+  };
 
   const [total, data] = await Promise.all([
     prisma.user.count({ where }),
