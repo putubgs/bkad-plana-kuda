@@ -107,6 +107,7 @@ model Ticket {
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz
 
   rating      Rating?
+  ratingLink  RatingLink?
   departments TicketDepartment[]
   progresses  TicketProgress[]
 
@@ -199,6 +200,21 @@ model Rating {
   users  RatingUser[]
 
   @@map("rating")
+}
+
+model RatingLink {
+  ratingLinkId String  @id @default(uuid()) @map("rating_link_id") @db.Uuid
+  ticketNumber String  @unique @map("ticket_number") @db.VarChar(100)
+  tokenHash    String  @unique @map("token_hash") @db.VarChar(255)
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz
+  isUsed       Boolean @default(false) @map("is_used")
+  usedAt       DateTime? @map("used_at") @db.Timestamptz
+
+  createdAt DateTime @default(dbgenerated("CURRENT_TIMESTAMP")) @map("created_at") @db.Timestamptz
+
+  ticket Ticket @relation(fields: [ticketNumber], references: [ticketNumber], onDelete: Cascade)
+
+  @@map("rating_links")
 }
 
 model RatingUser {

@@ -1,5 +1,5 @@
-import RatingView from "@/components/rating/rating-view";
+import { notFound } from "next/navigation";
 
 export default function RatingPage() {
-  return <RatingView />;
+  notFound();
 }

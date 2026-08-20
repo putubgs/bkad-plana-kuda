@@ -15,7 +15,8 @@ function createPrismaClient() {
 
 function getPrismaClient() {
   const existing = globalForPrisma.prisma;
-  if (existing?.ticket) {
+  // Recreate when the cached client predates a newly generated model.
+  if (existing?.ticket && existing?.ratingLink) {
     return existing;
   }
 

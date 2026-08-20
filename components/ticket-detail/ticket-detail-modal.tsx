@@ -11,6 +11,7 @@ import StatusBadge from "@/components/layanan-masuk/status-badge";
 import StatusFlow from "@/components/ticket-detail/status-flow";
 import CatatanTimeline from "@/components/ticket-detail/catatan-timeline";
 import TambahCatatanForm from "@/components/ticket-detail/tambah-catatan-form";
+import GenerateRatingLink from "@/components/ticket-detail/generate-rating-link";
 import InfoLayananTab from "@/components/ticket-detail/info-layanan-tab";
 import LogNotifikasiTab from "@/components/ticket-detail/log-notifikasi-tab";
 import { useLayananStore } from "@/store/use-layanan-store";
@@ -189,6 +190,9 @@ export default function TicketDetailModal() {
             <div className="flex flex-col gap-4">
               <StatusFlow status={ticket.status} />
               <CatatanTimeline entries={ticket.catatanProgres} />
+              {ticket.status === "Selesai" ? (
+                <GenerateRatingLink ticketNumber={ticket.noTiket} />
+              ) : null}
               <TambahCatatanForm
                 ticketId={ticket.id}
                 currentStatus={ticket.status}

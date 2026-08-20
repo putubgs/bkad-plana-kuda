@@ -1,21 +1,31 @@
 import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
 
-type NotFoundReason = "missing" | "not-found" | "not-finished";
+type NotFoundReason = "missing" | "not-found" | "not-finished" | "expired" | "used";
 
 const MESSAGES: Record<NotFoundReason, { title: string; description: string }> = {
   missing: {
     title: "Tautan Tidak Lengkap",
     description:
-      "Nomor tiket tidak ditemukan pada tautan ini. Silakan gunakan tautan rating yang dikirimkan melalui email setelah layanan Anda selesai diproses.",
+      "Tautan rating ini tidak lengkap. Silakan gunakan tautan yang dikirimkan setelah layanan Anda selesai diproses.",
   },
   "not-found": {
-    title: "Tiket Tidak Ditemukan",
-    description: "Nomor tiket pada tautan ini tidak terdaftar dalam sistem kami.",
+    title: "Tautan Tidak Valid",
+    description: "Tautan rating ini tidak terdaftar atau sudah tidak berlaku.",
   },
   "not-finished": {
     title: "Layanan Belum Selesai",
     description:
       "Rating hanya dapat diberikan setelah layanan selesai diproses. Silakan coba lagi setelah tiket Anda berstatus selesai.",
+  },
+  expired: {
+    title: "Tautan Kedaluwarsa",
+    description:
+      "Tautan rating ini sudah kedaluwarsa. Hubungi petugas layanan untuk mendapatkan tautan baru.",
+  },
+  used: {
+    title: "Tautan Sudah Digunakan",
+    description:
+      "Rating untuk tautan ini sudah dikirimkan. Tautan tidak dapat digunakan lagi.",
   },
 };
 

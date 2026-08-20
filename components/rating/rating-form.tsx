@@ -3,28 +3,26 @@
 import { useState, type FormEvent } from "react";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import type { LayananMasuk } from "@/data/data-layanan";
-import { useAdminBidangStore } from "@/store/use-admin-bidang-store";
+import { postJson } from "@/lib/api-client";
+import type { ApiResult } from "@/lib/api/types";
 import RatingInputStars from "@/components/rating/rating-input-stars";
 
 export default function RatingForm({
+  token,
   ticket,
-  alreadyRated,
   onSubmitted,
 }: {
+  token: string;
   ticket: LayananMasuk;
-  alreadyRated: boolean;
   onSubmitted: () => void;
 }) {
-  const addRatingForBidangNames = useAdminBidangStore(
-    (state) => state.addRatingForBidangNames
-  );
-
   const [rating, setRating] = useState(0);
   const [komentar, setKomentar] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     if (rating === 0) {
@@ -33,29 +31,40 @@ export default function RatingForm({
     }
 
     setError(null);
-    addRatingForBidangNames(ticket.bidangUptb, {
-      noTiket: ticket.noTiket,
-      namaPemohon: ticket.namaPemohon,
-      rating,
-      komentar: komentar.trim() ? komentar.trim() : undefined,
-    });
-    setSubmitted(true);
-    onSubmitted();
+    setSubmitting(true);
+
+    try {
+      const result = await postJson<ApiResult>(
+        `/api/v1/rating-links/public/${encodeURIComponent(token)}`,
+        {
+          rating,
+          comment: komentar.trim() || undefined,
+        }
+      );
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      setSubmitted(true);
+      onSubmitted();
+    } catch {
+      setError("Gagal mengirim rating. Silakan coba lagi.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (submitted || alreadyRated) {
+  if (submitted) {
     return (
       <div className="rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
         <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
           <CheckCircleOutlinedIcon sx={{ fontSize: 26 }} />
         </span>
-        <p className="mt-3 text-sm font-bold text-slate-900">
-          {submitted ? "Terima kasih atas rating Anda!" : "Tiket ini sudah pernah dinilai"}
-        </p>
+        <p className="mt-3 text-sm font-bold text-slate-900">Terima kasih atas rating Anda!</p>
         <p className="mt-1 text-xs text-slate-400">
-          {submitted
-            ? "Rating Anda telah tercatat untuk bidang/UPTB yang menangani tiket ini."
-            : "Rating untuk tiket ini sudah dikirimkan sebelumnya. Terima kasih atas partisipasi Anda."}
+          Rating Anda telah tercatat untuk bidang/UPTB yang menangani tiket {ticket.noTiket}.
         </p>
       </div>
     );
@@ -63,7 +72,7 @@ export default function RatingForm({
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(event) => void handleSubmit(event)}
       className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm"
     >
       <p className="text-sm font-bold text-slate-900">Bagaimana pengalaman Anda?</p>
@@ -97,9 +106,10 @@ export default function RatingForm({
 
       <button
         type="submit"
-        className="mt-4 w-full rounded-xl bg-[#0F2044] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a335f]"
+        disabled={submitting}
+        className="mt-4 w-full rounded-xl bg-[#0F2044] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1a335f] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Kirim Rating
+        {submitting ? "Mengirim rating…" : "Kirim Rating"}
       </button>
     </form>
   );

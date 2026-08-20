@@ -16,6 +16,7 @@ type RouteContext = { params: Promise<{ ticketNumber: string }> };
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { session, response } = await requireApiSession();
+  console.log(session);
   if (!session) return response;
 
   const { ticketNumber } = await context.params;
